@@ -34,31 +34,47 @@ const tareaInicial: Task = {
   sprint: ''
 }
 
+const solicitarTareas = async (): Promise<Task[]> => {
+  const respuesta = await fetch(`${API_URL}/tasks`)
+
+  if (!respuesta.ok) {
+    throw new Error('Error al obtener las tareas')
+  }
+
+  return respuesta.json()
+}
+
 function App() {
   const [tareas, setTareas] = useState<Task[]>([])
   const [formulario, setFormulario] = useState<Task>(tareaInicial)
   const [idEditando, setIdEditando] = useState<number | null>(null)
   const [mensaje, setMensaje] = useState('')
 
-  useEffect(() => {
-    obtenerTareas()
-  }, [])
-
   const obtenerTareas = async () => {
     try {
-      const respuesta = await fetch(`${API_URL}/tasks`)
-
-      if (!respuesta.ok) {
-        throw new Error('Error al obtener las tareas')
-      }
-
-      const datos = await respuesta.json()
-      setTareas(datos)
+      setTareas(await solicitarTareas())
     } catch (error) {
       console.error(error)
       setMensaje('No se pudieron cargar las tareas')
     }
   }
+
+  useEffect(() => {
+    let componenteActivo = true
+
+    solicitarTareas()
+      .then((datos) => {
+        if (componenteActivo) setTareas(datos)
+      })
+      .catch((error) => {
+        console.error(error)
+        if (componenteActivo) setMensaje('No se pudieron cargar las tareas')
+      })
+
+    return () => {
+      componenteActivo = false
+    }
+  }, [])
 
   const manejarCambio = (
     e: React.ChangeEvent<
