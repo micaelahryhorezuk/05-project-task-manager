@@ -1,0 +1,52 @@
+services:
+
+  db:
+    image: postgres:16-alpine
+    container_name: task_manager_db
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: task_manager
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - task_manager_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend
+    container_name: task_manager_backend
+    restart: unless-stopped
+
+    environment:
+      PORT: 3001
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: task_manager
+
+    ports:
+      - "3001:3001"
+
+    depends_on:
+      - db
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: task_manager_frontend
+    restart: unless-stopped
+
+    ports:
+      - "5173:5173"
+
+    depends_on:
+      - backend
+
+volumes:
+  task_manager_data:
